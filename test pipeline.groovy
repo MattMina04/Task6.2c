@@ -4,20 +4,20 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn -T 4 clean package'
             }
         }
         
         stage('Unit and Integration Tests') {
             steps {
-                sh 'mvn test'
+                sh 'mvn -T 4 test'
             }
         }
         
         stage('Code Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
+                    sh 'mvn -T 4 sonar:sonar'
                 }
             }
         }
