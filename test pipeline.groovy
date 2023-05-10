@@ -7,47 +7,44 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-
         stage('Unit and Integration Tests') {
             steps {
                 sh 'mvn test'
             }
         }
-
         stage('Code Analysis') {
             steps {
-                // Use a code analysis tool such as SonarQube or Checkstyle
+                sh 'mvn sonar:sonar'
             }
         }
-
         stage('Security Scan') {
             steps {
-                // Use a security scan tool such as OWASP ZAP or Sonatype DepShield
+                sh 'mvn dependency-check:check'
             }
         }
-
         stage('Deploy to Staging') {
             steps {
-                // Use a deployment tool such as AWS CodeDeploy or Jenkins Deploy Plugin
+                sh 'scp target/app.war user@staging-server:/opt/tomcat/webapps'
             }
         }
-
         stage('Integration Tests on Staging') {
             steps {
-                // Use an integration testing tool such as Selenium or JMeter
+                sh 'curl http://staging-server:8080/app'
             }
         }
-
         stage('Deploy to Production') {
             steps {
-                // Use a deployment tool such as AWS CodeDeploy or Jenkins Deploy Plugin
+                sh 'scp target/app.war user@production-server:/opt/tomcat/webapps'
             }
         }
     }
 
     post {
         always {
-            emailext subject: "Pipeline Status: ${currentBuild.result}", 
-            body: "Pipeline Status: ${currentBuild.result}\n\nLogs:\n${currentBuild.rawBuild.getLog()}", 
-            to: "example@email.com"
-       
+            emailext subject: "Pipeline ${currentBuild.fullDisplayName} completed: ${currentBuild.result}",
+                     body: "Pipeline ${currentBuild.fullDisplayName} completed: ${currentBuild.result}.",
+                     to: "email@example.com",
+                     attachmentsPattern: 'logs/*.txt'
+        }
+    }
+}
