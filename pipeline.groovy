@@ -1,71 +1,83 @@
-pipeline{
-    agent any
-    stages{
-        stage('Build') {
-            steps {
-                echo 'Building the code using Maven'
-            }
-        }
-        stage('Unit and Integration Tests') {
-            steps {
-                echo 'Running unit and integration tests using JUnit and Selenium'
-            }
-            post{
-                always{
-                    emailext (
-                        subject: 'Unit and Integration Tests Status',
-                        to: 'madhikarmianshu@gmail.com',
-                        body: "${currentBuild.result}: Job ",
-                        attachLog: true
-                    )
-                }
-            }
-        }
-        stage('Code Analysis') {
-            steps {
-                echo 'Analyzing the code using Jenkins and SonarQube'
-            }
-        }
-        stage('Security Scan') {
-            steps {
-                echo 'Performing a security scan on the code using OWASP ZAP'
-            }
-            post{
-                always{
-                    emailext (
-                        subject: 'Security Scan Status',
-                        to: 'madhikarmianshu@gmail.com',
-                        body: "${currentBuild.result}: Job ",
-                        attachLog: true,
-                    )
-                }
-            }
-        }
-        stage('Deploy to Staging') {
-            steps {
-                echo 'Deploying the application to an AWS EC2 instance'
-            }
-        }
-        stage('Integration Tests on Staging') {
-            steps {
-                echo 'Running integration tests on the staging environment using Selenium'
-            }
-            post{
-                always{
-                    emailext (
-                        subject: 'Integration Tests on Staging Status',
-                        to: 'madhikarmianshu@gmail.com',
-                        body: "${currentBuild.result}: Job ",
-                        attachLog: true,
-                    )
-                }
-            }
-        }
-        stage('Deploy to Production') {
-            steps {
-                echo 'Deploying the application to an AWS EC2 instance'
-            }
-        }
-    }
+pipeline {
+	agent any
+	
+	environment {
+		GIT_REPOSITORY = "https://github.com/MattMina04/SIT223-Task6.2C.git"
+		GIT_BRANCH = "main"
 
+		EMAIL_ADDRESS = "matthew2117@Hotmail.com"
+
+		BUILD_PATH = 'build'
+		TEST_PATH = 'test'
+
+		CPPCHECK_LOG = 'cppcheck.log'
+
+		PRODUCTION_ENVIRONMENT = 'mattprod'
+		TESTING_ENVIRONMENT = 'matttest'
+	}
+
+	stages {
+		stage('Build') {
+			steps {
+
+				echo "Fetch source code"
+				git branch: "${GIT_BRANCH}", url: "${GIT_REPOSITORY}"
+
+				echo 'Build code with Gradle'
+				// bat 'gradle clean build'
+			}
+		}
+		
+		stage('Unit and Integration Tests') {
+			steps {
+				echo 'Run unit tests generated with the Google Test framework'
+				// bat '%TEST_PATH%/test.exe'
+
+				mail to: "${EMAIL_ADDRESS}", subject: "[JENKINS] Successful test", body: "${currentBuild.rawBuild.log}"
+			}
+			post {
+				failure {
+					mail to: "${EMAIL_ADDRESS}", subject: "[JENKINS] Failed test", body: "${currentBuild.rawBuild.log}"
+				}
+			}
+		}
+		
+		stage('Code Analysis'){
+			steps {
+				echo 'Perform code analysis with Cppcheck'
+				// bat 'cppcheck --enable=all %BUILD_PATH% 2> %CPPCHECK_LOG%'
+			}
+		}
+		  
+		stage('Security Scan'){
+			steps {
+				echo 'Security scan.'
+
+				mail to: "${EMAIL_ADDRESS}", subject: "[JENKINS] Successful security scan", body: "${currentBuild.rawBuild.log}"
+			}
+			post {
+				failure {
+					mail to: "${EMAIL_ADDRESS}", subject: "[JENKINS] Failed security scan", body: "${currentBuild.rawBuild.log}"
+				}
+			}
+		}
+		
+		stage('Deploy to Staging'){
+			steps {
+				echo "Deploy the app to testing environment ${TESTING_ENVIRONMENT}"
+			}
+		}
+		
+		stage('Integration Tests on Staging'){
+			steps {
+				sleep(10)
+			}
+		}
+		
+		stage('Deploy to Production'){
+			steps {
+				echo "Deploy the app to production environment ${PRODUCTION_ENVIRONMENT}"
+			}
+		}
+	}
 }
