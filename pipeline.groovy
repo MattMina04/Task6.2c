@@ -66,7 +66,9 @@ pipeline {
       // Archive logs as attachments
       archiveArtifacts artifacts: 'logs/**', fingerprint: true
     }
-    
+  }
+  
+  post {
     success {
       echo 'Pipeline Success: Sending success notification email'
       // Send success notification email with status and log attachments
